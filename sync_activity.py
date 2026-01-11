@@ -9,6 +9,7 @@ to sync your Boot.dev activity with your GitHub contribution graph.
 import os
 import json
 import sys
+import re
 from datetime import datetime
 from pathlib import Path
 import subprocess
@@ -45,11 +46,11 @@ class BootdevActivitySync:
         For now, this is a placeholder that would need to be implemented
         with actual Boot.dev API endpoints.
         """
-        api_key = os.getenv('BOOTDEV_API_KEY')
-        username = os.getenv('BOOTDEV_USERNAME')
+        api_key = os.getenv('BOOTDEV_API_KEY', '').strip()
+        username = os.getenv('BOOTDEV_USERNAME', '').strip()
         
         if not api_key or not username:
-            print("Warning: BOOTDEV_API_KEY or BOOTDEV_USERNAME not set")
+            print("Warning: BOOTDEV_API_KEY or BOOTDEV_USERNAME not set or empty")
             print("Please set these environment variables to sync activity")
             return None
         
@@ -84,7 +85,14 @@ class BootdevActivitySync:
         try:
             subprocess.run(['git', 'add', str(self.activity_file)], check=True)
             
-            commit_message = f"Boot.dev activity: {activity.get('message', 'sync')}"
+            # Sanitize commit message to prevent injection
+            raw_message = activity.get('message', 'sync')
+            # Remove any control characters and limit to alphanumeric, spaces, and safe punctuation
+            safe_message = re.sub(r'[^\w\s\-_.,!?()]', '', str(raw_message))
+            # Limit length
+            safe_message = safe_message[:100]
+            commit_message = f"Boot.dev activity: {safe_message}"
+            
             subprocess.run(['git', 'commit', '-m', commit_message], check=True)
             
             print(f"✓ Created commit: {commit_message}")
@@ -125,7 +133,11 @@ def main():
                 line = line.strip()
                 if line and not line.startswith('#') and '=' in line:
                     key, value = line.split('=', 1)
-                    os.environ[key] = value
+                    # Only allow alphanumeric keys with underscores
+                    if re.match(r'^[A-Z_][A-Z0-9_]*$', key):
+                        os.environ[key] = value
+                    else:
+                        print(f"Warning: Skipping invalid environment variable name: {key}")
     
     syncer = BootdevActivitySync()
     return syncer.sync()
