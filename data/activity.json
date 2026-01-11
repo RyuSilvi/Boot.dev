@@ -5,6 +5,12 @@
       "username": "testuser",
       "activity_type": "sync",
       "message": "Boot.dev activity sync"
+    },
+    {
+      "timestamp": "2026-01-11T22:10:05.922528",
+      "username": "test_user",
+      "activity_type": "sync",
+      "message": "Boot.dev activity sync"
     }
   ]
 }
