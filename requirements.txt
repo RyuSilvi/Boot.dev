@@ -1,0 +1,7 @@
+# Python dependencies for Boot.dev Activity Sync
+# Currently using only standard library modules
+# Add any future dependencies here
+
+# Uncomment if you need these in the future:
+# requests>=2.31.0  # For API calls
+# python-dotenv>=1.0.0  # For .env file handling
