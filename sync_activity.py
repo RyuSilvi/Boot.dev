@@ -87,10 +87,12 @@ class BootdevActivitySync:
             
             # Sanitize commit message to prevent injection
             raw_message = activity.get('message', 'sync')
-            # Remove any control characters and limit to alphanumeric, spaces, and safe punctuation
-            safe_message = re.sub(r'[^\w\s\-_.,!?()]', '', str(raw_message))
+            # Only allow alphanumeric, spaces, hyphens, underscores, and basic punctuation
+            safe_message = re.sub(r'[^\w\s\-_.,!?]', '', str(raw_message))
             # Limit length
-            safe_message = safe_message[:100]
+            safe_message = safe_message[:100].strip()
+            if not safe_message:
+                safe_message = "sync"
             commit_message = f"Boot.dev activity: {safe_message}"
             
             subprocess.run(['git', 'commit', '-m', commit_message], check=True)
@@ -126,6 +128,7 @@ class BootdevActivitySync:
 def main():
     """Main entry point."""
     # Load environment variables from .env file if it exists
+    # Note: For production use, consider using the python-dotenv library
     env_file = Path(__file__).parent / '.env'
     if env_file.exists():
         with open(env_file) as f:
@@ -133,8 +136,11 @@ def main():
                 line = line.strip()
                 if line and not line.startswith('#') and '=' in line:
                     key, value = line.split('=', 1)
-                    # Only allow alphanumeric keys with underscores
-                    if re.match(r'^[A-Z_][A-Z0-9_]*$', key):
+                    # Validate environment variable name (alphanumeric and underscores only)
+                    if re.match(r'^[A-Za-z_][A-Za-z0-9_]*$', key):
+                        # Remove quotes if present (simple quote handling)
+                        if value and value[0] in ('"', "'") and value[-1] == value[0]:
+                            value = value[1:-1]
                         os.environ[key] = value
                     else:
                         print(f"Warning: Skipping invalid environment variable name: {key}")
