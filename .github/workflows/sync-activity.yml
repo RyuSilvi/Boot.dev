@@ -1,0 +1,42 @@
+name: Sync Boot.dev Activity
+
+on:
+  schedule:
+    # Run every 6 hours
+    - cron: '0 */6 * * *'
+  workflow_dispatch:  # Allow manual triggering
+
+jobs:
+  sync-activity:
+    runs-on: ubuntu-latest
+    
+    permissions:
+      contents: write  # Allow the workflow to push commits
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Fetch all history for proper git operations
+      
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      
+      - name: Configure Git
+        run: |
+          git config --global user.name "Boot.dev Activity Bot"
+          git config --global user.email "bootdev-bot@users.noreply.github.com"
+      
+      - name: Sync Activity
+        env:
+          BOOTDEV_API_KEY: ${{ secrets.BOOTDEV_API_KEY }}
+          BOOTDEV_USERNAME: ${{ secrets.BOOTDEV_USERNAME }}
+        run: |
+          python sync_activity.py
+      
+      - name: Push changes
+        run: |
+          git push
+        continue-on-error: true  # Don't fail if there's nothing to push
