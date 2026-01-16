@@ -1,6 +1,7 @@
 name: Sync Boot.dev Activity
 
-
+on:
+  workflow_dispatch:
 
 jobs:
   sync-activity:
